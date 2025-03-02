@@ -1,7 +1,7 @@
 __update hostname__
-sudo hostnamectl set-hostname controlplane
+'''sudo hostnamectl set-hostname controlplane
 sudo hostnamectl set-hostname worker1
-sudo hostnamectl set-hostname worker2
+sudo hostnamectl set-hostname worker2'''
 
 ### __check mac and uuid__
 ip link
