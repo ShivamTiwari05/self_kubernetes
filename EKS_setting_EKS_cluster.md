@@ -1,4 +1,5 @@
-Prerequisites
+***Prerequisites***  
+
 Download and Install AWS Cli - Please Refer this link.
 Setup and configure AWS CLI using the aws configure command.
 Install and configure eksctl using the steps mentioned here.
