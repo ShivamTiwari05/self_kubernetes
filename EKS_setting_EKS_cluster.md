@@ -37,6 +37,7 @@ eksctl create nodegroup --cluster=observability \
 
 # Update ./kube/config file
 aws eks update-kubeconfig --name observability
+```
 
 
 
@@ -107,7 +108,7 @@ aws eks create-access-entry \
   --principal-arn arn:aws:iam::111122223333:user/my-user \
   --type STANDARD \
   --kubernetes-group system:masters
-  ```
+```
 ⚙️ Authentication Modes Explained
 Mode	                        Description
 CONFIG_MAP	                Only uses aws-auth ConfigMap (default for old clusters).
@@ -141,4 +142,81 @@ For federated users (SSO), use IAM roles and map them via either method.
 
 5. If you plan to manage access externally (without editing YAMLs inside the cluster), go for Access Entries
 
+****How to Create and Use OIDC for IAM Roles for Service Accounts (IRSA)****
+🔹 Step 1: Confirm EKS Cluster Has OIDC Provider
+Run:
+
 ```
+aws eks describe-cluster --name <your-cluster-name> --query "cluster.identity.oidc.issuer" --output text
+```
+If it returns a URL (like https://oidc.eks.ap-south-1.amazonaws.com/id/EXAMPLE1234), you're good.
+
+If not, add an OIDC provider:
+
+```
+eksctl utils associate-iam-oidc-provider \
+  --region <region> \
+  --cluster <cluster-name> \
+  --approve
+```
+🔹 Step 2: Create an IAM Role for the Pod
+The IAM role must trust the OIDC provider and allow a specific Kubernetes namespace and service account to assume it.
+
+You can use eksctl for this:
+
+```
+eksctl create iamserviceaccount \
+  --name my-sa \
+  --namespace default \
+  --cluster <cluster-name> \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+  --approve \
+  --override-existing-serviceaccounts
+```
+This will:
+
+Create a service account my-sa in the default namespace.
+
+Create an IAM role that trusts your OIDC provider.
+
+Attach the policy to allow S3 read access.
+
+Annotate the service account with the IAM role ARN.
+
+🔹 Step 3: Use the Service Account in a Pod
+Here's a simple example:
+
+yaml
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: s3-reader
+spec:
+  serviceAccountName: my-sa
+  containers:
+  - name: app
+    image: amazonlinux
+    command: [ "/bin/sh", "-c", "aws s3 ls" ]
+```
+This pod will assume the IAM role associated with my-sa and can run AWS CLI calls using that identity.
+
+🔎 For External Users via OIDC (e.g., Okta, Google) — [Advanced Use Case]
+This involves:
+
+Setting up an OIDC provider (Okta, Google, etc.)
+
+Configuring Kubernetes api-server to trust it (EKS does not yet support direct external OIDC auth for users easily).
+
+You'd usually pair this with Dex or Keycloak and tools like kube-oidc-proxy.
+
+Then, use kubectl with --auth-provider=oidc.
+
+➡️ This is not officially supported natively by EKS out of the box — you need custom setups.
+
+✅ Summary: How to Create OIDC in EKS
+Step	What You Do
+1️⃣	Associate your EKS cluster with an IAM OIDC provider using eksctl
+2️⃣	Create a Kubernetes service account
+3️⃣	Create an IAM role that trusts the OIDC identity and maps to that service account
+4️⃣	Deploy workloads using that service account (so pods can assume IAM roles securely)
