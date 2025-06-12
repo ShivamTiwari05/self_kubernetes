@@ -39,12 +39,12 @@ eksctl create nodegroup --cluster=observability \
 aws eks update-kubeconfig --name observability
 ```
 
-
+---------------------****************--------------------****************-------------------***************-------------***************-----------------
 
 ****how IAM users/roles can access Kubernetes APIs in Amazon EKS, and how you can configure it in your own cluster****
 
 Here’s a simple and clear breakdown of how IAM users/roles can access Kubernetes APIs in Amazon EKS, and how you can configure it in your own cluster. You can treat this as a conceptual guide when working with EKS.
-🧠 What's the Goal Here?
+***What's the Goal Here?***
 You want IAM users or roles (e.g., your AWS login or CI/CD role) to be able to:
 
 1. Use kubectl to interact with Kubernetes objects in your EKS cluster ✅
@@ -64,40 +64,34 @@ Can only assign Kubernetes permissions.
 Cannot use AWS CLI/Console to manage EKS or cluster-level settings.
 ✅ Best for: External user auth or enterprise SSO solutions.
 
-🔧 How to Grant IAM Users Access to Kubernetes
+****How to Grant IAM Users Access to Kubernetes****
 EKS uses IAM Authenticator, which maps IAM identities to Kubernetes RBAC permissions.
 
 Two methods (authentication modes):
-🔁 1. aws-auth ConfigMap (Older method)
+1. aws-auth ConfigMap (Older method)
 This ConfigMap lives inside the cluster.
 
 The person who creates the cluster is the only one with access by default.
 
 That person must manually add others via:
-
 ```
 eksctl create iamidentitymapping \
   --cluster my-cluster \
   --arn arn:aws:iam::111122223333:user/my-user \
   --username my-user \
   --group system:masters
-  ```
+```
 Users added this way get mapped to Kubernetes users and groups (for RBAC).
 You must manage this ConfigMap manually.
 
-🆕 2. Access Entries (Recommended for new clusters)
+2. Access Entries (Recommended for new clusters)
 Introduced in newer EKS platform versions.
 
 You manage access outside the cluster, using:
-
-AWS CLI
-
-EKS API
-
-AWS Console
-
-CloudFormation
-
+1. AWS CLI
+2. EKS API
+3. AWS Console
+4. CloudFormation
 ✅ No need to SSH into the cluster to modify ConfigMap.
 
 Example CLI to create access entry:
@@ -110,21 +104,21 @@ aws eks create-access-entry \
   --kubernetes-group system:masters
 ```
 ⚙️ Authentication Modes Explained
-Mode	                        Description
-CONFIG_MAP	                Only uses aws-auth ConfigMap (default for old clusters).
-API_AND_CONFIG_MAP	        Uses both methods. You manage access via ConfigMap and access entries.
-API                        	Only use access entries. More secure and scalable.
+****Mode****	                        ****Description****
+CONFIG_MAP	                        Only uses aws-auth ConfigMap (default for old clusters).
+API_AND_CONFIG_MAP	                Uses both methods. You manage access via ConfigMap and access entries.
+API                        	        Only use access entries. More secure and scalable.
 
 👉 Once you enable access entries (API or API_AND_CONFIG_MAP), you cannot disable them.
 
-🗺️ Which Should You Use?
-You want...	                                                        Use This
-Simpler management via AWS CLI/Console	                           ✅ Access entries (API or API_AND_CONFIG_MAP)
-Full control from inside the cluster (legacy clusters)	            aws-auth ConfigMap
-To migrate old ConfigMap entries	                                  Move to access entries
-To support hybrid nodes (e.g., EC2 + on-prem)	                      Use API_AND_CONFIG_MAP mode
+****Which Should You Use?****
+****if You want...*****                                             ****Use This****
+1. Simpler management via AWS CLI/Console	                              Access entries (API or API_AND_CONFIG_MAP)
+2. Full control from inside the cluster (legacy clusters)	              aws-auth ConfigMap
+3. To migrate old ConfigMap entries	                                    Move to access entries
+4. To support hybrid nodes (e.g., EC2 + on-prem)	                      Use API_AND_CONFIG_MAP mode
 
-💡 Extra Tips
+***Extra Tips***
 You can scope access entries by namespace and attach access policies.
 
 If using ConfigMap, always back it up before changes.
@@ -197,7 +191,7 @@ spec:
 ```
 This pod will assume the IAM role associated with my-sa and can run AWS CLI calls using that identity.
 
-🔎 For External Users via OIDC (e.g., Okta, Google) — [Advanced Use Case]
+For External Users via OIDC (e.g., Okta, Google) — [Advanced Use Case]
 This involves:
 Setting up an OIDC provider (Okta, Google, etc.)
 Configuring Kubernetes api-server to trust it (EKS does not yet support direct external OIDC auth for users easily).
@@ -207,12 +201,12 @@ Then, use kubectl with --auth-provider=oidc.
 
 ➡️ This is not officially supported natively by EKS out of the box — you need custom setups.
 
-✅ Summary: How to Create OIDC in EKS
+****How to Create OIDC in EKS****
 Step	What You Do
-1️⃣	Associate your EKS cluster with an IAM OIDC provider using eksctl
-2️⃣	Create a Kubernetes service account
-3️⃣	Create an IAM role that trusts the OIDC identity and maps to that service account
-4️⃣	Deploy workloads using that service account (so pods can assume IAM roles securely)
+1️. Associate your EKS cluster with an IAM OIDC provider using eksctl
+2️. Create a Kubernetes service account
+3️. Create an IAM role that trusts the OIDC identity and maps to that service account
+4️. Deploy workloads using that service account (so pods can assume IAM roles securely)
 
 
 -------------****************-----------------------***************-----------------***************-----------------**********************---------------
@@ -300,3 +294,54 @@ In each case, AWS services are granted permissions to perform actions by assigni
 
 Conclusion
 In the cloud-native world, especially with Kubernetes on AWS, managing permissions securely is critical. IRSA (IAM Roles for Service Accounts) offers a powerful, secure, and fine-grained way to manage AWS access for your EKS workloads. Whether you use eksctl for simplicity or configure things manually for more control, understanding how Kubernetes service accounts and AWS IAM work together is key to building secure, scalable cloud applications.
+
+------------------*************--------------------**********************---------------------**********************--------------************--------------------
+
+
+****IRSA VS RBAC****
+
+IRSA vs RBAC — What’s the Difference?
+****Feature****	                                          ****IRSA****	                                                                  ****RBAC****
+Layer	                                        AWS IAM (cloud-level)	                                                                Kubernetes (cluster-level)
+Purpose	                                      Grant access to AWS services (e.g., S3, DynamoDB) from pods	                          Control access to Kubernetes API (e.g.,                                                                                                                                       who can list pods, create deployments)
+Applies To                                   	Pods using a Kubernetes service account	                                               Users, service accounts, or groups
+Example	                                      Pod can read from S3 bucket	                                                          User can list pods in a namespace
+Defined In	                                  IAM Role + OIDC + IRSA annotation	                                                    Kubernetes Role and RoleBinding or                                                                                                                                             ClusterRole and ClusterRoleBinding
+
+***🔹 Why Do You Need Both?***
+You need ***IRSA*** when a pod needs to access AWS resources like: Amazon S3 (download/upload files), Amazon DynamoDB, SQS, SNS, Secrets Manager, etc.
+
+But if you want to control what that pod can do inside the Kubernetes cluster, such as:
+
+Reading ConfigMaps, Writing logs to a volume, Watching other pods, Creating new jobs or services…  you use Kubernetes ***RBAC***.
+
+In short:
+IRSA controls what the pod can do in AWS and RBAC controls what the pod (or user) can do in Kubernetes
+
+****Real-World Example****
+Let’s say you have a pod that:
+
+1. Needs to fetch configuration from AWS S3
+2. Needs to read Secrets from Kubernetes
+3. Needs to create Jobs dynamically
+
+You would need: ***IRSA***; so it can access S3 securely. (option 1 and 2)
+RBAC RoleBinding so it can access Kubernetes secrets and create jobs (option 2 and 3)
+
+****<u>Imagine You Have a Pod Running in EKS </u>****
+That pod (your application) might need to do two different types of things:
+
+1. Access AWS resources
+Maybe it needs to read from an S3 bucket; Or talk to DynamoDB or Secrets Manager. This is outside the Kubernetes cluster, in AWS.
+For this, you use ****IRSA (IAM Roles for Service Accounts)**** — it gives AWS permissions to the pod.
+
+2. Interact with Kubernetes itself
+Maybe it needs to read secrets from Kubernetes; Or create other Kubernetes objects, like jobs or pods; Or get information about services in the cluster. This is inside the Kubernetes cluster. For this, you use RBAC (Role-Based Access Control) — it gives Kubernetes permissions to the pod (or user).
+
+***So Why Do You Need Both?***
+***Task***	                                         ***Needs IRSA?***	                                                   ***Needs RBAC?***
+Read from S3	                                      ✅ Yes (AWS permission)  	                                             ❌ No
+Read a Kubernetes secret	                          ❌ No                                                                  ✅ Yes
+List pods in a namespace	                          ❌ No	                                                                 ✅ Yes
+Write to DynamoDB	                                  ✅ Yes	                                                                ❌ No
+Create a Kubernetes Job	                            ❌ No	                                                                  ✅ Yes
