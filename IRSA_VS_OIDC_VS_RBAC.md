@@ -79,11 +79,11 @@ API &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Only use access entries. More secure an
 👉 Once you enable access entries (API or API_AND_CONFIG_MAP), you cannot disable them.
 
 ****Which Should You Use?****  
-****if You want...***** &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ****Use This****
-1. Simpler management via AWS CLI/Console &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Access entries (API or API_AND_CONFIG_MAP)
+****if You want...***** &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ****Use This****
+1. Simpler management via AWS CLI/Console &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Access entries (API or API_AND_CONFIG_MAP)
 2. Full control from inside the cluster (legacy clusters) &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;aws-auth ConfigMap
-3. To migrate old ConfigMap entries	&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Move to access entries
-4. To support hybrid nodes (e.g., EC2 + on-prem) &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Use API_AND_CONFIG_MAP mode
+3. To migrate old ConfigMap entries	&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Move to access entries
+4. To support hybrid nodes (e.g., EC2 + on-prem) &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Use API_AND_CONFIG_MAP mode
 
 ***Extra Tips***
 You can scope access entries by namespace and attach access policies.
@@ -156,53 +156,52 @@ spec:
     image: amazonlinux
     command: [ "/bin/sh", "-c", "aws s3 ls" ]
 ```
-This pod will assume the IAM role associated with my-sa and can run AWS CLI calls using that identity.
+This pod will assume the IAM role associated with my-sa and can run AWS CLI calls using that identity.  
 
-For External Users via OIDC (e.g., Okta, Google) — [Advanced Use Case]
-This involves:
-Setting up an OIDC provider (Okta, Google, etc.)
-Configuring Kubernetes api-server to trust it (EKS does not yet support direct external OIDC auth for users easily).
+For External Users via OIDC (e.g., Okta, Google) — [Advanced Use Case]  
+This involves:  
+Setting up an OIDC provider (Okta, Google, etc.)  
+Configuring Kubernetes api-server to trust it (EKS does not yet support direct external OIDC auth for users easily).  
 You'd usually pair this with Dex or Keycloak and tools like kube-oidc-proxy.
 
 Then, use kubectl with --auth-provider=oidc.
 
 ➡️ This is not officially supported natively by EKS out of the box — you need custom setups.
 
-****How to Create OIDC in EKS****
-Step	What You Do
-1️. Associate your EKS cluster with an IAM OIDC provider using eksctl
-2️. Create a Kubernetes service account
-3️. Create an IAM role that trusts the OIDC identity and maps to that service account
-4️. Deploy workloads using that service account (so pods can assume IAM roles securely)
+****How to Create OIDC in EKS****  
+Steps:  
+1️. Associate your EKS cluster with an IAM OIDC provider using eksctl  
+2️. Create a Kubernetes service account  
+3️. Create an IAM role that trusts the OIDC identity and maps to that service account  
+4️. Deploy workloads using that service account (so pods can assume IAM roles securely)  
 
 
 -------------****************-----------------------***************-----------------***************-----------------**********************---------------
 
 
 
-*****Understanding IAM Service Accounts in AWS EKS and Beyond*****
+*****Understanding IAM Service Accounts in AWS EKS and Beyond*****  
 When running applications in AWS EKS (Elastic Kubernetes Service), it’s common for your workloads (pods or containers) to need access to AWS services like S3, DynamoDB, or CloudWatch. However, Kubernetes pods don’t have native AWS identity or permissions. This is where IAM Roles for Service Accounts (IRSA) comes into play — a secure and scalable way to grant AWS permissions to pods running in EKS.
 
-****What is an IAM Service Account?****
+****What is an IAM Service Account?****  
 In the context of EKS, an IAM service account refers to a Kubernetes service account that is linked to an AWS IAM role. This setup allows the pods that use this service account to assume the IAM role and thereby gain permissions to access AWS services — all without hardcoding credentials or granting over-permissive access to the underlying EC2 nodes.
 
-This is made possible by IRSA, a feature in EKS that uses Kubernetes service accounts in combination with IAM roles and an OIDC identity provider, enabling fine-grained and secure access control.
+This is made possible by IRSA, a feature in EKS that uses Kubernetes service accounts in combination with IAM roles and an OIDC identity provider, enabling fine-grained and secure access control.  
 
-Why Use IRSA Instead of Other Methods?
+Why Use IRSA Instead of Other Methods?  
 Traditionally, developers might be tempted to either bake static AWS credentials into container images (a major security risk), or use the node’s IAM role to grant pods access (which applies the same wide permissions to all pods on a node). Both approaches are risky and not scalable. IRSA solves this problem by allowing each pod to securely assume its own IAM role, scoped to only the AWS resources it needs.
 
 Creating an IAM Service Account Using eksctl
-The easiest way to set up IRSA is with the eksctl command-line tool. For example:
+The easiest way to set up IRSA is with the eksctl command-line tool. For example:  
 
-bash
-Copy
-Edit
+```
 eksctl create iamserviceaccount \
   --name s3-reader \
   --namespace default \
   --cluster my-cluster \
   --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
   --approve
+  ```
 This command automates the process of:
 
 Creating a Kubernetes service account (s3-reader in this case),
@@ -225,7 +224,7 @@ Any pod using the s3-reader service account will now be able to securely access 
    
 This gives you full control but requires more setup and knowledge of AWS IAM and Kubernetes internals.
 
-****What is a Kubernetes Service Account?****
+****What is a Kubernetes Service Account?****  
 A Kubernetes service account is an identity that pods use to interact with the Kubernetes API or external services. It’s not for human users — it’s for internal workloads. Every namespace comes with a default service account, and you can create additional ones as needed. These are used to apply Kubernetes RBAC (Role-Based Access Control) rules or, in the case of IRSA, to assign IAM roles.
 
 To find service accounts in your cluster, you can run:
@@ -259,7 +258,7 @@ Here are some common examples:
 
 In each case, AWS services are granted permissions to perform actions by assigning them IAM roles — just like Kubernetes pods use service accounts linked to IAM roles through IRSA.
 
-Conclusion
+Conclusion  
 In the cloud-native world, especially with Kubernetes on AWS, managing permissions securely is critical. IRSA (IAM Roles for Service Accounts) offers a powerful, secure, and fine-grained way to manage AWS access for your EKS workloads. Whether you use eksctl for simplicity or configure things manually for more control, understanding how Kubernetes service accounts and AWS IAM work together is key to building secure, scalable cloud applications.
 
 ------------------*************--------------------**********************---------------------**********************--------------************--------------------
@@ -275,14 +274,14 @@ Applies To &emsp;&emsp;&emsp;&emsp;&emsp;(c.)Pods using a Kubernetes service acc
 Example	&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;(d.) Pod can read from s3 bucket	&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;4. User can list pods in a namespace  
 Defined In &emsp;&emsp;&emsp;&emsp;&emsp;(e.) IAM Role + OIDC + IRSA annotation	&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;5. Kubernetes Role and RoleBinding or                                                                                                                                             ClusterRole and ClusterRoleBinding
 
-***🔹 Why Do You Need Both?***
+***🔹 Why Do You Need Both?***  
 You need ***IRSA*** when a pod needs to access AWS resources like: Amazon S3 (download/upload files), Amazon DynamoDB, SQS, SNS, Secrets Manager, etc.
 
 But if you want to control what that pod can do inside the Kubernetes cluster, such as:
 
 Reading ConfigMaps, Writing logs to a volume, Watching other pods, Creating new jobs or services…  you use Kubernetes ***RBAC***.
 
-In short:
+In short:  
 IRSA controls what the pod can do in AWS and RBAC controls what the pod (or user) can do in Kubernetes
 
 ****Real-World Example****
@@ -295,7 +294,7 @@ Let’s say you have a pod that:
 You would need: ***IRSA***; so it can access S3 securely. (option 1 and 2)
 RBAC RoleBinding so it can access Kubernetes secrets and create jobs (option 2 and 3)
 
-****<u>Imagine You Have a Pod Running in EKS </u>****
+****<u>Imagine You Have a Pod Running in EKS </u>****  
 That pod (your application) might need to do two different types of things:
 
 1. Access AWS resources
