@@ -44,30 +44,35 @@ aws eks update-kubeconfig --name observability
 ****how IAM users/roles can access Kubernetes APIs in Amazon EKS, and how you can configure it in your own cluster****
 
 Here’s a simple and clear breakdown of how IAM users/roles can access Kubernetes APIs in Amazon EKS, and how you can configure it in your own cluster. You can treat this as a conceptual guide when working with EKS.
+
+
 ***What's the Goal Here?***
+
 You want IAM users or roles (e.g., your AWS login or CI/CD role) to be able to:
 
 1. Use kubectl to interact with Kubernetes objects in your EKS cluster ✅
 2. Manage the EKS cluster itself (via AWS CLI, Console, or SDKs) ✅
 
 🔐 Types of Identities That Can Access the Cluster
-1. IAM Users and Roles (Most common):
+1. IAM Users and Roles (Most common):  
 These identities authenticate through AWS IAM (via access keys, SSO, federation, etc.).
 You can assign:
 Kubernetes permissions (e.g., read pods, deploy apps)
 AWS/EKS permissions (e.g., create cluster, upgrade EKS)
 ✅ Best for: Admins, CI/CD tools, developers using AWS.
 
-2. OIDC Provider Users (Less common)
+2. OIDC Provider Users (Less common)  
 You set up your own OIDC provider (like Okta, Auth0, Google, etc.).
 Can only assign Kubernetes permissions.
 Cannot use AWS CLI/Console to manage EKS or cluster-level settings.
 ✅ Best for: External user auth or enterprise SSO solutions.
 
-****How to Grant IAM Users Access to Kubernetes****
+****How to Grant IAM Users Access to Kubernetes****  
+
+
 EKS uses IAM Authenticator, which maps IAM identities to Kubernetes RBAC permissions.
 
-Two methods (authentication modes):
+***Two methods (authentication modes):***
 1. aws-auth ConfigMap (Older method)
 This ConfigMap lives inside the cluster.
 
@@ -92,6 +97,8 @@ You manage access outside the cluster, using:
 2. EKS API
 3. AWS Console
 4. CloudFormation
+
+
 ✅ No need to SSH into the cluster to modify ConfigMap.
 
 Example CLI to create access entry:
@@ -104,6 +111,8 @@ aws eks create-access-entry \
   --kubernetes-group system:masters
 ```
 ⚙️ Authentication Modes Explained
+
+
 ****Mode****	                        ****Description****
 CONFIG_MAP	                        Only uses aws-auth ConfigMap (default for old clusters).
 API_AND_CONFIG_MAP	                Uses both methods. You manage access via ConfigMap and access entries.
@@ -111,12 +120,12 @@ API                        	        Only use access entries. More secure and sca
 
 👉 Once you enable access entries (API or API_AND_CONFIG_MAP), you cannot disable them.
 
-****Which Should You Use?****
-****if You want...*****                                             ****Use This****
-1. Simpler management via AWS CLI/Console	                              Access entries (API or API_AND_CONFIG_MAP)
-2. Full control from inside the cluster (legacy clusters)	              aws-auth ConfigMap
-3. To migrate old ConfigMap entries	                                    Move to access entries
-4. To support hybrid nodes (e.g., EC2 + on-prem)	                      Use API_AND_CONFIG_MAP mode
+****Which Should You Use?****  
+****if You want...***** &nbsp;&nbsp;&nbsp;&nbsp;****Use This****
+1. Simpler management via AWS CLI/Console&nbsp;&nbsp;&nbsp;&nbsp;Access entries (API or API_AND_CONFIG_MAP)
+2. Full control from inside the cluster (legacy clusters) &nbsp;&nbsp;&nbsp;&nbsp;aws-auth ConfigMap
+3. To migrate old ConfigMap entries	&nbsp;&nbsp;&nbsp;&nbsp;Move to access entries
+4. To support hybrid nodes (e.g., EC2 + on-prem) &nbsp;&nbsp;&nbsp;&nbsp;Use API_AND_CONFIG_MAP mode
 
 ***Extra Tips***
 You can scope access entries by namespace and attach access policies.
