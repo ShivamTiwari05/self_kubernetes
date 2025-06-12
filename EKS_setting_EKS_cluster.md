@@ -121,11 +121,11 @@ API                        	        Only use access entries. More secure and sca
 👉 Once you enable access entries (API or API_AND_CONFIG_MAP), you cannot disable them.
 
 ****Which Should You Use?****  
-****if You want...***** <div style="margin-left: 80px;">****Use This****
-1. Simpler management via AWS CLI/Console <div style="margin-left: 80px;">Access entries (API or API_AND_CONFIG_MAP)
-2. Full control from inside the cluster (legacy clusters) <div style="margin-left: 80px;">aws-auth ConfigMap
-3. To migrate old ConfigMap entries	<div style="margin-left: 80px;">Move to access entries
-4. To support hybrid nodes (e.g., EC2 + on-prem) <div style="margin-left: 80px;">Use API_AND_CONFIG_MAP mode
+****if You want...***** &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;">****Use This****
+1. Simpler management via AWS CLI/Console &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;">Access entries (API or API_AND_CONFIG_MAP)
+2. Full control from inside the cluster (legacy clusters) &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;">aws-auth ConfigMap
+3. To migrate old ConfigMap entries	&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;">Move to access entries
+4. To support hybrid nodes (e.g., EC2 + on-prem) &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;">Use API_AND_CONFIG_MAP mode
 
 ***Extra Tips***
 You can scope access entries by namespace and attach access policies.
