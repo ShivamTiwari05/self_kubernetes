@@ -41,7 +41,8 @@ aws eks update-kubeconfig --name observability
 
 ---------------------****************--------------------****************-------------------***************-------------***************-----------------
 
-****while creating the cluster in EKS, these are the things which are considered:**** 
+****while creating the cluster in EKS, these are the things which are considered:****  
+
 IRSA : which allow pods to access resources  
 
 additional access points = which allows other IAM roles/Users to access your cluster.
