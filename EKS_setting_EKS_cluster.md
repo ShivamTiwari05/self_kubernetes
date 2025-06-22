@@ -45,5 +45,9 @@ aws eks update-kubeconfig --name observability
 
 IRSA : which allow pods to access resources  
 
-additional access points = which allows other IAM roles/Users to access your cluster.
+additional access points = which allows other IAM roles/Users to access your cluster.  
+
+Endpoint Private & public access in EKS resource = to provode access to your cluster in vpc and outside VPC resp.  
+
+
 
